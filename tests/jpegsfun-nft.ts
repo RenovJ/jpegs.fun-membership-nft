@@ -49,22 +49,24 @@ describe("jpegsfun_nft", () => {
     program.programId
   );
 
-  // const masterEditionMint = Keypair.generate();
-  // const masterEditionMintPubkey = masterEditionMint.publicKey;
-  // const masterEditionMintPubkey = new PublicKey(
-  //   "3QC9byXaszTc1xL8W33tWG5QDwv6KLRVq2Af5n6ZNuev"
-  // );
+  const fs = require("fs");
+  const masterEditionMint = Keypair.fromSecretKey(
+    Uint8Array.from(
+      JSON.parse(fs.readFileSync("./masterEditionMint.json", "utf8"))
+    )
+  );
+  const masterEditionMintPubkey = masterEditionMint.publicKey;
   // const nftMint = Keypair.generate();
   // const nftMintPubkey = nftMint.publicKey;
 
-  const name = "jpegs.fun secret membership";
+  const name = "jpegs.fun Secret Society";
   const symbol = "JPEGS";
   const uri = `https://jpegs.fun/nft/metadata.json`;
   // const name = "Ronipepe secret membership";
   // const symbol = "rPEPEr";
   // const uri = `https://resources-test.jpegs.fun/metadata.json`;
-  const totalSupply = 5000;
-  /*
+  const totalSupply = 2024;
+
   it("Initializes the NFT collection", async () => {
     console.log("signer", provider.wallet.publicKey.toBase58());
     console.log("nftStatePDA", nftStatePDA.toBase58());
@@ -130,7 +132,6 @@ describe("jpegsfun_nft", () => {
     // assert.ok(nftState.masterEditionMint.equals(masterEditionMintPubkey));
   });
 
-  
   it("Creates the master edition", async () => {
     const [metadataAccount] = await PublicKey.findProgramAddressSync(
       [
@@ -157,7 +158,6 @@ describe("jpegsfun_nft", () => {
       true
     );
 
-
     let tx;
     try {
       tx = await program.methods
@@ -176,7 +176,7 @@ describe("jpegsfun_nft", () => {
           rent: SYSVAR_RENT_PUBKEY,
         })
         .rpc();
-      
+
       console.log("Create Master Edition transaction signature:", tx);
 
       // Fetch and log transaction details
@@ -185,22 +185,23 @@ describe("jpegsfun_nft", () => {
         commitment: "confirmed",
       });
       console.log("Transaction details:", JSON.stringify(txInfo, null, 2));
-
     } catch (error) {
       console.error("Error creating master edition:", error);
-      
+
       if (tx) {
         // If tx is defined, it means the transaction was submitted but failed
         const failedTxInfo = await provider.connection.getTransaction(tx, {
           maxSupportedTransactionVersion: 0,
           commitment: "confirmed",
         });
-        console.log("Failed transaction details:", JSON.stringify(failedTxInfo, null, 2));
+        console.log(
+          "Failed transaction details:",
+          JSON.stringify(failedTxInfo, null, 2)
+        );
       }
-      
+
       throw error; // Re-throw the error to fail the test
     }
-      
 
     console.log("Create Master Edition transaction signature:", tx);
 
@@ -210,7 +211,7 @@ describe("jpegsfun_nft", () => {
     );
     assert.equal(tokenAccountInfo.value.uiAmount, 1);
   });
-*/
+
   /*
   it("Mints a new NFT token and creates an edition", async () => {
     // Step 1: Mint NFT Token
@@ -394,11 +395,14 @@ describe("jpegsfun_nft", () => {
   });
   */
 
+  /*
   it("Debugging", async () => {
     const nftState = await program.account.nftState.fetch(nftStatePDA);
     console.log("nftState", nftState);
   });
-/*
+  */
+
+  /*
   it("Verifying", async () => {
     const umi = createUmi(
       "https://api.devnet.solana.com",
@@ -446,4 +450,58 @@ describe("jpegsfun_nft", () => {
       )
     )[0];
   }
+  /*
+  it("Updates metadata", async () => {
+    const nftState = await program.account.nftState.fetch(nftStatePDA);
+    const masterEditionMintPubkey = nftState.masterEditionMint;
+
+    const [metadataAccount] = await PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("metadata"),
+        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+        masterEditionMintPubkey.toBuffer(),
+      ],
+      TOKEN_METADATA_PROGRAM_ID
+    );
+
+    // const newUri = "https://jpegs.fun/nft/metadata.json";
+
+    try {
+      const tx = await program.methods
+        .updateMetadata()
+        .accounts({
+          signer: provider.wallet.publicKey,
+          nftState: nftStatePDA,
+          metadataAccount: metadataAccount,
+          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+        })
+        .rpc();
+
+      console.log("Update Metadata transaction signature:", tx);
+
+      // 트랜잭션 확인
+      await provider.connection.confirmTransaction(tx);
+
+      // 메타데이터 계정 정보 가져오기
+      const metadataAccountInfo = await provider.connection.getAccountInfo(
+        metadataAccount
+      );
+
+      if (metadataAccountInfo) {
+        // 메타데이터 디코딩 (이 부분은 실제 메타데이터 구조에 따라 조정이 필요할 수 있습니다)
+        const metadata = mplTokenMetadata.Metadata.deserialize(
+          metadataAccountInfo.data
+        );
+
+        // URI가 업데이트되었는지 확인
+        // assert.equal(metadata.data.uri, newUri, "URI was not updated correctly");
+      } else {
+        throw new Error("Metadata account not found");
+      }
+    } catch (error) {
+      console.error("Error updating metadata:", error);
+      throw error;
+    }
+  });
+  */
 });

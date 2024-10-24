@@ -2,17 +2,18 @@ use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     metadata::{
-        create_master_edition_v3, create_metadata_accounts_v3,
-        CreateMasterEditionV3,
-        CreateMetadataAccountsV3, Metadata,
+        create_master_edition_v3, create_metadata_accounts_v3, update_metadata_accounts_v2,
+        CreateMasterEditionV3, CreateMetadataAccountsV3, Metadata, UpdateMetadataAccountsV2,
     },
     token::{mint_to, Mint, MintTo, Token, TokenAccount},
 };
-use mpl_token_metadata::instructions::MintNewEditionFromMasterEditionViaTokenCpiBuilder;
 use mpl_token_metadata::accounts::{MasterEdition, Metadata as MetadataAccount};
-use mpl_token_metadata::types::{DataV2, Creator};
+use mpl_token_metadata::instructions::{
+    MintNewEditionFromMasterEditionViaTokenCpiBuilder,
+};
+use mpl_token_metadata::types::{Creator, DataV2};
 
-declare_id!("7sa1BGWMwmZEjQExnn8jBWNZNuxgWQcpAQFSiNo3nkAv");
+declare_id!("JPEG1hyU9AKdNmUtiFpU6csNSH6D93rdisH5zUEkEPS");
 
 #[program]
 pub mod jpegsfun_nft {
@@ -29,7 +30,7 @@ pub mod jpegsfun_nft {
         require!(name.len() <= 32, ErrorCode::NameTooLong);
         require!(symbol.len() <= 7, ErrorCode::SymbolTooLong);
         require!(uri.len() <= 200, ErrorCode::UriTooLong);
-        // let name = "jpegs.fun secret membership".to_string();
+        // let name = "jpegs.fun Secret Society".to_string();
         // let symbol = "JPEGS".to_string();
         // let uri = "https://jpegs.fun/nft/metadata.json";
 
@@ -66,10 +67,7 @@ pub mod jpegsfun_nft {
         );
 
         msg!("Minting token");
-        let seeds = &[
-            b"nft-state".as_ref(),
-            &[nft_state.bump]
-        ];
+        let seeds = &[b"nft-state".as_ref(), &[nft_state.bump]];
         let signer = &[&seeds[..]];
         let cpi_context = CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
@@ -78,7 +76,7 @@ pub mod jpegsfun_nft {
                 to: ctx.accounts.associated_token_account.to_account_info(),
                 authority: nft_state.to_account_info(),
             },
-            signer
+            signer,
         );
         mint_to(cpi_context, 1)?;
 
@@ -94,25 +92,23 @@ pub mod jpegsfun_nft {
                 system_program: ctx.accounts.system_program.to_account_info(),
                 rent: ctx.accounts.rent.to_account_info(),
             },
-            signer
+            signer,
         );
         let data_v2 = DataV2 {
             name,
             symbol,
             uri,
             seller_fee_basis_points: 0,
-            creators: Some(vec![
-                Creator{
-                    address: ctx.accounts.signer.key(),
-                    verified: false,
-                    share: 100
-                }
-            ]),
+            creators: Some(vec![Creator {
+                address: ctx.accounts.signer.key(),
+                verified: false,
+                share: 100,
+            }]),
             collection: None,
             uses: None,
         };
-        create_metadata_accounts_v3(cpi_context, data_v2, false, true, None)?;
-        
+        create_metadata_accounts_v3(cpi_context, data_v2, true, true, None)?;
+
         msg!("Creating master edition account");
         let cpi_context = CpiContext::new_with_signer(
             ctx.accounts.token_metadata_program.to_account_info(),
@@ -127,7 +123,7 @@ pub mod jpegsfun_nft {
                 system_program: ctx.accounts.system_program.to_account_info(),
                 rent: ctx.accounts.rent.to_account_info(),
             },
-            signer
+            signer,
         );
         create_master_edition_v3(cpi_context, None)?;
         nft_state.edition_count = 0;
@@ -137,10 +133,7 @@ pub mod jpegsfun_nft {
     }
 
     pub fn mint_nft_token(ctx: Context<MintNftToken>) -> Result<()> {
-        let seeds = &[
-            b"nft-state".as_ref(),
-            &[ctx.accounts.nft_state.bump]
-        ];
+        let seeds = &[b"nft-state".as_ref(), &[ctx.accounts.nft_state.bump]];
         let signer = &[&seeds[..]];
 
         let cpi_context = CpiContext::new_with_signer(
@@ -150,14 +143,14 @@ pub mod jpegsfun_nft {
                 to: ctx.accounts.token_account.to_account_info(),
                 authority: ctx.accounts.nft_state.to_account_info(),
             },
-            signer
+            signer,
         );
         mint_to(cpi_context, 1)?;
 
         Ok(())
     }
 
-    pub fn mint_edition(ctx:Context<MintEdition>) -> Result<()> {
+    pub fn mint_edition(ctx: Context<MintEdition>) -> Result<()> {
         let nft_state = &mut ctx.accounts.nft_state;
 
         require!(
@@ -167,16 +160,13 @@ pub mod jpegsfun_nft {
         nft_state.edition_count += 1;
         let edition_number = nft_state.edition_count;
 
-        let seeds = &[
-            b"nft-state".as_ref(),
-            &[ctx.accounts.nft_state.bump]
-        ];
+        let seeds = &[b"nft-state".as_ref(), &[ctx.accounts.nft_state.bump]];
         let signer = &[&seeds[..]];
 
         let mut cpi_builder = MintNewEditionFromMasterEditionViaTokenCpiBuilder::new(
-            &ctx.accounts.token_metadata_program
+            &ctx.accounts.token_metadata_program,
         );
-        
+
         cpi_builder
             .new_metadata(&ctx.accounts.new_metadata)
             .new_edition(&ctx.accounts.new_edition)
@@ -195,10 +185,48 @@ pub mod jpegsfun_nft {
             .mint_new_edition_from_master_edition_via_token_args(
                 mpl_token_metadata::types::MintNewEditionFromMasterEditionViaTokenArgs {
                     edition: edition_number,
-                }
-            )
-            .invoke_signed(signer)?;
+                },
+            ).invoke_signed(signer)?;
         msg!("edition number: {}", edition_number);
+
+        Ok(())
+    }
+    pub fn update_metadata(ctx: Context<UpdateMetadata>) -> Result<()> {
+        let name = ctx.accounts.nft_state.name.clone();
+        let symbol = ctx.accounts.nft_state.symbol.clone();
+        let uri = ctx.accounts.nft_state.uri.clone();
+
+        let seeds = &[b"nft-state".as_ref(), &[ctx.accounts.nft_state.bump]];
+        let signer = &[&seeds[..]];
+
+        let cpi_accounts = UpdateMetadataAccountsV2 {
+            metadata: ctx.accounts.metadata_account.to_account_info(),
+            update_authority: ctx.accounts.nft_state.to_account_info(),
+        };
+        let cpi_program = ctx.accounts.token_metadata_program.to_account_info();
+        let data = DataV2 {
+            name: name.clone(),
+            symbol: symbol.clone(),
+            uri: uri.clone(),
+            seller_fee_basis_points: 0,
+            creators: Some(vec![Creator {
+                address: ctx.accounts.signer.key(),
+                verified: false,
+                share: 100,
+            }]),
+            collection: None,
+            uses: None,
+        };
+
+        let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
+
+        let _ = update_metadata_accounts_v2(
+            cpi_context,
+            Some(ctx.accounts.nft_state.key()),
+            Some(data),
+            Some(false),
+            Some(true),
+        );
 
         Ok(())
     }
@@ -352,6 +380,25 @@ pub struct MintEdition<'info> {
     pub token_metadata_program: AccountInfo<'info>,
     /// CHECK: We are passing in this account ourselves
     pub master_edition_metadata: AccountInfo<'info>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateMetadata<'info> {
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [b"nft-state"],
+        bump = nft_state.bump
+    )]
+    pub nft_state: Account<'info, NftState>,
+    #[account(
+        mut,
+        address=MetadataAccount::find_pda(&nft_state.master_edition_mint).0,
+    )]
+    /// CHECK: We're about to update this account
+    pub metadata_account: AccountInfo<'info>,
+    pub token_metadata_program: Program<'info, Metadata>,
 }
 
 #[account]
