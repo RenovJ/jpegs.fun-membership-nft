@@ -1,0 +1,23 @@
+{
+  "name": "Ronipepe membership",
+  "symbol": "RONIPEPE",
+  "description": "this membership unlocks early access to peperoni pizza. more pizza to be revealed soon.",
+  "seller_fee_basis_points": 1,
+  "image": "https://resources-test.jpegs.fun/image2.webp",
+  "attributes": [],
+  "properties": {
+    "category": "image",
+    "creators": [
+      {
+        "address": "5EDuQNiCKKQX2miovFD8KZsH83qaiLgoy4wBLzX8Bsah",
+        "share": 100
+      }
+    ],
+    "files": [
+      {
+        "uri": "https://resources-test.jpegs.fun/image2.webp",
+        "type": "image/png"
+      }
+    ]
+  }
+}
